@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Live modular L2 liquidity desk for Manta — DefiLlama-backed TVL, peers, and risk signals.">
+  <title>L2 Liquidity Desk · Manta — Yujia Huang</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { padding: 1rem 1rem 2rem; }
+    .explorer-wrap { max-width: 68rem; margin: 0 auto; }
+    .explorer-bar {
+      display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem;
+      align-items: baseline; justify-content: space-between; margin-bottom: 0.35rem;
+    }
+    .explorer-bar h1 { font-size: 1.2rem; margin: 0; }
+    .explorer-meta { color: var(--muted); font-size: 0.86rem; margin: 0 0 0.45rem; }
+    .explorer-help { color: var(--muted); font-size: 0.86rem; margin: 0 0 0.85rem; }
+
+    .cli {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.78rem;
+      background: #1c1c1c;
+      color: #d8d8d8;
+      border-radius: 4px;
+      padding: 0.7rem 0.85rem;
+      margin: 0 0 1rem;
+      overflow-x: auto;
+      line-height: 1.55;
+    }
+    .cli .cmt { color: #8a8a8a; }
+    .cli .ok { color: #9ccc9c; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.55rem;
+      margin-bottom: 0.85rem;
+    }
+    @media (max-width: 800px) {
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #faf9f7;
+      padding: 0.65rem 0.75rem;
+    }
+    .kpi .label { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.02em; text-transform: uppercase; }
+    .kpi .value { font-size: 1.15rem; font-weight: 700; margin-top: 0.2rem; font-variant-numeric: tabular-nums; }
+    .kpi .sub { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
+    .kpi .value.neg { color: #8b2e2e; }
+    .kpi .value.pos { color: #2a6b3c; }
+
+    .desk-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.85fr);
+      gap: 0.85rem;
+      align-items: start;
+    }
+    @media (max-width: 880px) {
+      .desk-layout { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .panel-head {
+      display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+      background: #faf9f7;
+    }
+    .panel-head h2 { font-size: 0.9rem; margin: 0; }
+    .panel-head .meta { font-size: 0.75rem; color: var(--muted); }
+    .panel-body { padding: 0.7rem 0.75rem; }
+
+    .chart-wrap { position: relative; height: min(42vh, 340px); }
+    #tvl-chart, #subscan-chart { width: 100%; height: 100%; display: block; }
+
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.55rem;
+    }
+    .toolbar button, .refresh-btn {
+      font: inherit; font-size: 0.8rem; padding: 0.28rem 0.55rem;
+      border: 1px solid var(--line); background: #fff; border-radius: 3px;
+      cursor: pointer; color: var(--text);
+    }
+    .toolbar button.active, .toolbar button:hover, .refresh-btn:hover {
+      border-color: var(--link); color: var(--link);
+    }
+    .toolbar button.active { background: #e8eef8; }
+
+    table.data {
+      width: 100%; border-collapse: collapse; font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+    }
+    table.data th, table.data td {
+      text-align: left; padding: 0.35rem 0.4rem; border-bottom: 1px solid var(--line);
+    }
+    table.data th {
+      color: var(--muted); font-weight: 700; font-size: 0.72rem;
+      text-transform: uppercase; letter-spacing: 0.02em;
+    }
+    table.data td.num, table.data th.num { text-align: right; }
+    table.data tr.hl td { background: #eef3fa; }
+    table.data .muted { color: var(--muted); }
+
+    .signal {
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      padding: 0.55rem 0.6rem;
+      margin-bottom: 0.45rem;
+      font-size: 0.82rem;
+      line-height: 1.4;
+      background: #faf9f7;
+    }
+    .signal strong { display: block; margin-bottom: 0.15rem; font-size: 0.84rem; }
+    .signal.warn { border-color: #d2b48c; background: #fbf6ee; }
+    .signal.crit { border-color: #d0a0a0; background: #faf0f0; }
+    .signal.ok { border-color: #b7d0ba; background: #f2f7f2; }
+
+    .status-line {
+      font-size: 0.8rem; color: var(--muted); margin: 0.65rem 0 0;
+    }
+    .status-line.error { color: #8b2e2e; }
+
+    .key-row {
+      display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center;
+      margin-top: 0.55rem;
+    }
+    .key-row input {
+      flex: 1 1 14rem;
+      font: inherit;
+      font-size: 0.85rem;
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: #faf9f7;
+    }
+
+    .sources {
+      margin: 1rem 0 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .sources strong { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="explorer-wrap">
+    <div class="explorer-bar">
+      <h1>L2 Liquidity Desk · Manta</h1>
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <button type="button" class="refresh-btn" id="btn-refresh">Refresh live</button>
+        <a href="index.html">← Back</a>
+      </div>
+    </div>
+    <p class="explorer-help">
+      Live Manta liquidity and on-chain metrics from
+      <a href="https://defillama.com/docs/api" target="_blank" rel="noopener noreferrer">DefiLlama</a>
+      and
+      <a href="https://support.subscan.io/" target="_blank" rel="noopener noreferrer">Subscan</a>
+      (<code>manta.api.subscan.io</code>).
+    </p>
+
+    <pre class="cli" id="cli-block"><span class="cmt"># DefiLlama</span>
+curl -s https://api.llama.fi/v2/chains | jq '.[] | select(.name|test("Manta"))'
+curl -s https://api.llama.fi/v2/historicalChainTvl/Manta
+<span class="cmt"># Subscan Atlantic (X-API-Key from https://pro.subscan.io/)</span>
+curl -sS -X POST -H "x-api-key: $SUBSCAN_KEY" -H "content-type: application/json" \
+  -d "{}" https://manta.api.subscan.io/api/scan/metadata
+curl -sS -X POST -H "x-api-key: $SUBSCAN_KEY" -H "content-type: application/json" \
+  -d "{}" https://manta.api.subscan.io/api/scan/token
+curl -sS -X POST -H "x-api-key: $SUBSCAN_KEY" -H "content-type: application/json" \
+  -d "{\"start\":\"2026-06-01\",\"end\":\"2026-07-14\",\"format\":\"day\",\"category\":\"transfer\"}" \
+  https://manta.api.subscan.io/api/v2/scan/daily
+<span class="ok" id="cli-status"># waiting for live fetch…</span></pre>
+
+    <div class="kpi-grid" id="kpi-grid">
+      <div class="kpi"><div class="label">Manta TVL</div><div class="value" id="kpi-tvl">—</div><div class="sub" id="kpi-tvl-sub">loading</div></div>
+      <div class="kpi"><div class="label">Peak → now</div><div class="value" id="kpi-dd">—</div><div class="sub" id="kpi-dd-sub">drawdown from ATH</div></div>
+      <div class="kpi"><div class="label">Atlantic TVL</div><div class="value" id="kpi-atl">—</div><div class="sub">DefiLlama</div></div>
+      <div class="kpi"><div class="label">Peer rank (TVL)</div><div class="value" id="kpi-rank">—</div><div class="sub" id="kpi-rank-sub">among tracked L2 sample</div></div>
+    </div>
+
+    <div class="desk-layout">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Historical chain TVL · Manta</h2>
+          <span class="meta" id="chart-meta">DefiLlama /v2/historicalChainTvl/Manta</span>
+        </div>
+        <div class="panel-body">
+          <div class="toolbar" id="range-toolbar" role="group" aria-label="Chart range">
+            <button type="button" data-range="90">90d</button>
+            <button type="button" data-range="365" class="active">1y</button>
+            <button type="button" data-range="all">All</button>
+            <button type="button" data-range="intern">Research window</button>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="tvl-chart" width="900" height="400" aria-label="Manta historical TVL chart"></canvas>
+          </div>
+          <p class="status-line" id="chart-note">
+            Shaded band: Jan–Apr 2024 research window.
+          </p>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="panel-head">
+          <h2>Risk signals (computed)</h2>
+          <span class="meta">from live series</span>
+        </div>
+        <div class="panel-body" id="signals">
+          <div class="signal">Loading live series…</div>
+        </div>
+      </aside>
+    </div>
+
+    <div class="desk-layout" style="margin-top:0.85rem;">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Peer L2 comparison</h2>
+          <span class="meta">/v2/chains snapshot</span>
+        </div>
+        <div class="panel-body" style="overflow:auto;">
+          <table class="data" id="peer-table">
+            <thead>
+              <tr>
+                <th>Chain</th>
+                <th class="num">TVL (USD)</th>
+                <th class="num">vs Manta</th>
+                <th>Token</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="4" class="muted">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Protocols on Manta</h2>
+          <span class="meta">/protocols filter</span>
+        </div>
+        <div class="panel-body" style="overflow:auto; max-height: 22rem;">
+          <table class="data" id="proto-table">
+            <thead>
+              <tr>
+                <th>Protocol</th>
+                <th>Category</th>
+                <th class="num">Manta TVL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="3" class="muted">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel" style="margin-top:0.85rem;">
+      <div class="panel-head">
+        <h2>Atlantic on-chain · Subscan</h2>
+        <span class="meta">manta.api.subscan.io</span>
+      </div>
+      <div class="panel-body">
+        <p class="status-line" style="margin-top:0;">
+          Atlantic chain stats via
+          <a href="https://support.subscan.io/" target="_blank" rel="noopener noreferrer">Subscan</a>.
+          Optional live refresh: API key from
+          <a href="https://pro.subscan.io/" target="_blank" rel="noopener noreferrer">pro.subscan.io</a>
+          (stored in this browser only).
+        </p>
+        <div class="key-row">
+          <input id="subscan-key" type="password" autocomplete="off" placeholder="Subscan API key">
+          <button type="button" class="refresh-btn" id="btn-subscan">Load Atlantic</button>
+          <button type="button" class="refresh-btn" id="btn-subscan-clear">Clear key</button>
+        </div>
+        <div class="kpi-grid" id="subscan-kpis" style="margin-top:0.75rem;">
+          <div class="kpi"><div class="label">Native symbol</div><div class="value" id="ss-symbol">—</div><div class="sub" id="ss-symbol-sub">token/native</div></div>
+          <div class="kpi"><div class="label">Holders (reported)</div><div class="value" id="ss-holders">—</div><div class="sub">count_account</div></div>
+          <div class="kpi"><div class="label">Transfers (window)</div><div class="value" id="ss-transfers">—</div><div class="sub" id="ss-transfers-sub">daily transfer sum</div></div>
+          <div class="kpi"><div class="label">API clock</div><div class="value" id="ss-now" style="font-size:0.95rem;">—</div><div class="sub">/api/now</div></div>
+        </div>
+        <div class="chart-wrap" style="height:180px;margin-top:0.65rem;">
+          <canvas id="subscan-chart" width="900" height="220" aria-label="Atlantic daily transfers"></canvas>
+        </div>
+        <p class="status-line" id="subscan-status">Loading Subscan data…</p>
+      </div>
+    </section>
+
+    <p class="status-line" id="fetch-status">Fetching DefiLlama…</p>
+
+    <p class="sources">
+      <strong>Data:</strong>
+      <a href="https://defillama.com/chain/manta" target="_blank" rel="noopener noreferrer">defillama.com/chain/manta</a> ·
+      <a href="https://support.subscan.io/" target="_blank" rel="noopener noreferrer">support.subscan.io</a> ·
+      <a href="https://manta.subscan.io/" target="_blank" rel="noopener noreferrer">manta.subscan.io</a> ·
+      <a href="https://manta.network/ecosystem.html" target="_blank" rel="noopener noreferrer">Manta ecosystem</a>.
+    </p>
+
+    <section class="get-in-touch">
+      <h3>Questions and Contact</h3>
+      <p>
+        <a href="mailto:yujiahuang.research@gmail.com">Send an email</a> if you have questions or want to get in touch!
+      </p>
+    </section>
+  </div>
+  <script src="js/subscan-snapshot.js"></script>
+  <script src="js/manta-case.js"></script>
+</body>
+</html>

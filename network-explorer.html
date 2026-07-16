@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instrument Network Explorer — Yujia Huang</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { padding: 1rem 1rem 2rem; }
+    .explorer-wrap { max-width: 64rem; margin: 0 auto; }
+    .explorer-bar {
+      display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem;
+      align-items: baseline; justify-content: space-between; margin-bottom: 0.5rem;
+    }
+    .explorer-bar h1 { font-size: 1.15rem; margin: 0; }
+    .explorer-meta, .explorer-help { color: var(--muted); font-size: 0.88rem; margin: 0 0 0.55rem; }
+    .explorer-help { font-size: 0.86rem; margin-bottom: 0.85rem; }
+
+    .explorer-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(15rem, 0.85fr);
+      gap: 0.85rem;
+      align-items: start;
+    }
+    @media (max-width: 840px) {
+      .explorer-layout { grid-template-columns: 1fr; }
+    }
+
+    .explorer-viz {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .explorer-stage {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #faf9f7;
+      overflow: hidden;
+      height: min(68vh, 640px);
+      touch-action: none;
+    }
+    #network-explorer {
+      width: 100%; height: 100%; display: block; cursor: grab;
+    }
+    #network-explorer.dragging { cursor: grabbing; }
+
+    .params-panel {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      height: min(68vh, 640px);
+      overflow: hidden;
+    }
+    .params-panel h2 {
+      font-size: 0.95rem;
+      margin: 0;
+      padding: 0.65rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .params-selected {
+      padding: 0.65rem 0.75rem;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.86rem;
+      line-height: 1.45;
+      min-height: 5.5rem;
+      background: #faf9f7;
+    }
+    .params-selected strong { font-size: 1rem; }
+    .params-table-wrap {
+      overflow: auto;
+      flex: 1;
+    }
+    table.params-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    table.params-table th,
+    table.params-table td {
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      white-space: nowrap;
+    }
+    table.params-table th {
+      position: sticky;
+      top: 0;
+      background: #f3f1ec;
+      font-weight: 700;
+      z-index: 1;
+    }
+    table.params-table tr {
+      cursor: pointer;
+    }
+    table.params-table tr:hover td {
+      background: #f7f5f1;
+    }
+    table.params-table tr.selected td {
+      background: #e8eef8;
+    }
+    .hub-buttons {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.55rem;
+    }
+    .hub-buttons button {
+      font: inherit; font-size: 0.85rem; padding: 0.25rem 0.55rem;
+      border: 1px solid var(--line); background: #fff; border-radius: 3px;
+      cursor: pointer; color: var(--text);
+    }
+    .hub-buttons button:hover { border-color: var(--link); color: var(--link); }
+  </style>
+</head>
+<body>
+  <div class="explorer-wrap">
+    <div class="explorer-bar">
+      <h1>Crypto instrument network</h1>
+      <a href="index.html">← Back</a>
+    </div>
+    <p class="explorer-meta" id="explorer-meta">Loading full instrument graph…</p>
+    <p class="explorer-help">
+      Scroll to zoom · drag to pan · click a node or table row to inspect parameters · hub buttons jump the camera.
+      Graph covers <em>all</em> symbols from the 2025 instrument universe (trading-pair adjacency).
+    </p>
+
+    <div class="explorer-layout">
+      <div class="explorer-viz">
+        <div class="explorer-stage">
+          <canvas id="network-explorer"></canvas>
+        </div>
+        <div class="hub-buttons" id="hub-buttons"></div>
+      </div>
+      <aside class="params-panel">
+        <h2>Asset parameters</h2>
+        <div class="params-selected" id="params-selected">
+          Click a node or row to inspect degree, rank, and top counterparties.
+        </div>
+        <div class="params-table-wrap">
+          <table class="params-table">
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Deg</th>
+                <th>Rank</th>
+                <th>Share</th>
+                <th>Top links</th>
+              </tr>
+            </thead>
+            <tbody id="params-body"></tbody>
+          </table>
+        </div>
+      </aside>
+    </div>
+
+    <section class="get-in-touch">
+      <h3>Questions and Contact</h3>
+      <p>
+        <a href="mailto:yujiahuang.research@gmail.com">Send an email</a> if you have questions or want to get in touch!
+      </p>
+    </section>
+  </div>
+  <script src="js/network-data.js"></script>
+  <script src="js/network-explorer.js"></script>
+</body>
+</html>

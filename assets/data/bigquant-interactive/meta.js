@@ -1,0 +1,2 @@
+window.BQ_SHAP=window.BQ_SHAP||{};
+window.BQ_SHAP['meta']={"features":["return_5","return_10","return_20","(amount / m_avg(amount, 6))","(m_avg(amount, 6) / m_avg(amount, 11))","(c_pct_rank(amount) / c_pct_rank(m_avg(amount, 6)))","(c_pct_rank(m_avg(amount, 6)) / c_pct_rank(m_avg(amount, 11)))","rank_return_0","rank_return_5","rank_return_10","(rank_return_0 / rank_return_5)","(rank_return_5 / rank_return_10)","pe_ttm"],"base_value":0.5000185370445251,"n_rows_full":3799739,"note":"Sampled exports for web interactive SHAP desk"};
