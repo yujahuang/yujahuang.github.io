@@ -156,6 +156,15 @@ ul li {
   line-height: 1.7;
 }
 
+.link-sep {
+  display: inline-block;
+  margin: 0 0.55rem;
+  color: var(--muted);
+  font-weight: 700;
+  user-select: none;
+  pointer-events: none;
+}
+
 /* Experience / project rows: image left, text right */
 .media-entry {
   display: grid;
